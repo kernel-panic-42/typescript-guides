@@ -1,26 +1,35 @@
+---
+title: Array.reduce() Deep Dive
+tags: [arrays, functional, pipelines]
+difficulty: beginner
+status: published
+updated: 2025-09-08
+---
+
 # TypeScript `Array.reduce()` --- Deep Dive
 
 ## Learning Objective
 
 Understand how to use `Array.reduce()` in TypeScript to:\
+
 1. Fold arrays into single values (sums, objects, etc.).\
 2. Build function pipelines where values flow through a sequence of
-transformations.\
+   transformations.\
 3. Apply both synchronous and asynchronous pipelines in real-world
-scenarios.
+   scenarios.
 
-------------------------------------------------------------------------
+---
 
 ## What `reduce()` Does
 
 `reduce()` takes an array and reduces it to a single value by applying a
 reducer function to each element.
 
-------------------------------------------------------------------------
+---
 
 ## Function Signature
 
-``` ts
+```ts
 array.reduce<T, U>(
   callback: (accumulator: U, currentValue: T, currentIndex: number, array: T[]) => U,
   initialValue: U
@@ -33,15 +42,15 @@ array.reduce<T, U>(
     always provide it).\
 -   Returns a single accumulated value.
 
-------------------------------------------------------------------------
+---
 
 ## Step-by-Step Trace Example
 
-``` ts
+```ts
 const nums = [1, 2, 3];
 const sum = nums.reduce((acc, n, i) => {
-  console.log(`i=${i}, acc=${acc}, n=${n} -> next=${acc + n}`);
-  return acc + n;
+    console.log(`i=${i}, acc=${acc}, n=${n} -> next=${acc + n}`);
+    return acc + n;
 }, 0);
 // Logs:
 // i=0, acc=0, n=1 -> next=1
@@ -50,7 +59,7 @@ const sum = nums.reduce((acc, n, i) => {
 // sum = 6
 ```
 
-------------------------------------------------------------------------
+---
 
 ## Using `reduce()` as a Pipeline
 
@@ -59,42 +68,37 @@ Instead of numbers, imagine an **array of functions**
 
 ### Transformer Type
 
-``` ts
+```ts
 type StringTransformer = (input: string) => string;
 ```
 
 ### Run Pipeline with Trace
 
-``` ts
+```ts
 function runPipeline(input: string, fns: StringTransformer[]): string {
-  return fns.reduce((acc, fn, i) => {
-    const next = fn(acc);
-    console.log(`step=${i}, before="${acc}", after="${next}"`);
-    return next;
-  }, input);
+    return fns.reduce((acc, fn, i) => {
+        const next = fn(acc);
+        console.log(`step=${i}, before="${acc}", after="${next}"`);
+        return next;
+    }, input);
 }
 ```
 
 ### Example Transformers
 
-``` ts
-const trim: StringTransformer           = s => s.trim();
-const toUpper: StringTransformer        = s => s.toUpperCase();
-const collapseSpaces: StringTransformer = s => s.replace(/\s+/g, " ");
-const addBang: StringTransformer        = s => s + "!";
+```ts
+const trim: StringTransformer = s => s.trim();
+const toUpper: StringTransformer = s => s.toUpperCase();
+const collapseSpaces: StringTransformer = s => s.replace(/\s+/g, ' ');
+const addBang: StringTransformer = s => s + '!';
 ```
 
 ### Running the Pipeline
 
-``` ts
-const transformers: StringTransformer[] = [
-  trim,
-  collapseSpaces,
-  toUpper,
-  addBang,
-];
+```ts
+const transformers: StringTransformer[] = [trim, collapseSpaces, toUpper, addBang];
 
-const result = runPipeline("   hello     world   ", transformers);
+const result = runPipeline('   hello     world   ', transformers);
 // Logs:
 // step=0, before="   hello     world   ", after="hello     world"
 // step=1, before="hello     world",     after="hello world"
@@ -103,44 +107,49 @@ const result = runPipeline("   hello     world   ", transformers);
 // result = "HELLO WORLD!"
 ```
 
-------------------------------------------------------------------------
+---
 
 ## Reusable Helpers
 
 ### Left-to-right `pipe`
 
-``` ts
-export const pipe = <T>(...fns: Array<(x: T) => T>) =>
-  (input: T): T => fns.reduce((acc, fn) => fn(acc), input);
+```ts
+export const pipe =
+    <T>(...fns: Array<(x: T) => T>) =>
+    (input: T): T =>
+        fns.reduce((acc, fn) => fn(acc), input);
 
 // Usage:
 const shout = pipe(trim, collapseSpaces, toUpper, addBang);
-const out = shout("   hello     world   "); // "HELLO WORLD!"
+const out = shout('   hello     world   '); // "HELLO WORLD!"
 ```
 
 ### Right-to-left `compose`
 
-``` ts
-export const compose = <T>(...fns: Array<(x: T) => T>) =>
-  (input: T): T => fns.reduceRight((acc, fn) => fn(acc), input);
+```ts
+export const compose =
+    <T>(...fns: Array<(x: T) => T>) =>
+    (input: T): T =>
+        fns.reduceRight((acc, fn) => fn(acc), input);
 ```
 
 ### Async Pipeline
 
-``` ts
+```ts
 type AsyncTransform<T> = (x: T) => Promise<T> | T;
 
-export const pipeAsync = <T>(...fns: AsyncTransform<T>[]) =>
-  async (input: T): Promise<T> =>
-    fns.reduce<Promise<T>>(async (pAcc, fn, i) => {
-      const acc = await pAcc;
-      const next = await fn(acc);
-      console.log(`step=${i}, before=`, acc, `after=`, next);
-      return next;
-    }, Promise.resolve(input));
+export const pipeAsync =
+    <T>(...fns: AsyncTransform<T>[]) =>
+    async (input: T): Promise<T> =>
+        fns.reduce<Promise<T>>(async (pAcc, fn, i) => {
+            const acc = await pAcc;
+            const next = await fn(acc);
+            console.log(`step=${i}, before=`, acc, `after=`, next);
+            return next;
+        }, Promise.resolve(input));
 ```
 
-------------------------------------------------------------------------
+---
 
 ## Key Takeaways
 

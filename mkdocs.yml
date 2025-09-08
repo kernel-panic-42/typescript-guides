@@ -1,0 +1,14 @@
+site_name: TypeScript Guides
+theme:
+    name: material
+nav:
+    - Home: README.md
+    - Guides:
+          - Array.reduce(): guides/typescript-reduce.md
+          - tsconfig Basics: guides/tsconfig-basics.md
+          - Async/Await & Promises: guides/async-await.md
+          - Generics: guides/generics.md
+markdown_extensions:
+    - admonition
+    - toc:
+          permalink: true
